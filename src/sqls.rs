@@ -30,18 +30,27 @@ ORDER BY
     END;\
 ";
 
+const DATE_FORMAT: &str = "\
+SELECT
+    AllData.*,
+    STRFTIME(`Período de Apuração`, '%d/%m/%Y') AS `PA (day/month/year)`
+FROM
+    AllData;\
+";
+
 // Predefined SQL commands for easy selection.
-pub const SQL_COMMANDS: [&str; 12] = [
+pub const SQL_COMMANDS: [&str; 13] = [
     "SELECT * FROM AllData;",
     "SELECT `Valor da Base de Cálculo das Contribuições` FROM AllData;",
+    "SELECT * FROM AllData WHERE `Data 1ª DCOMP Ativa` IS NOT NULL;",
     "SELECT * FROM AllData WHERE `Ano do Período de Apuração` = 2020;",
     "SELECT * FROM AllData WHERE `Mês do Período de Apuração` IS NULL;",
-    "SELECT * FROM AllData WHERE `Data 1ª DCOMP Ativa` IS NOT NULL;",
     "SELECT * FROM AllData WHERE `Mês do Período de Apuração` = '';",
     "SELECT * FROM AllData WHERE `Ano do Período de Apuração` = 2020 AND `Mês do Período de Apuração` = 'março';",
     "SELECT * FROM AllData WHERE `Ano do Período de Apuração` = 2020 AND `Trimestre do Período de Apuração` = 3;",
     "SELECT `Tipo de Crédito`, COUNT(*) AS Frequencia FROM AllData GROUP BY `Tipo de Crédito` ORDER BY Frequencia DESC;",
     "SELECT `Tipo de Operação`, `Tipo de Crédito`, COUNT(*) FROM AllData GROUP BY `Tipo de Operação`, `Tipo de Crédito`;",
     "SELECT * FROM AllData WHERE `Natureza da Base de Cálculo dos Créditos` LIKE 'Saldo de Crédito%' AND `Mês do Período de Apuração` IS NULL;",
+    DATE_FORMAT,
     GROUP_BY_DATE,
 ];
