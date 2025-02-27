@@ -1,5 +1,7 @@
 use crate::{Arguments, SQL_COMMANDS, get_extension};
-use egui::{Color32, Frame, Grid, Stroke, Ui};
+use egui::{
+    Align, CollapsingHeader, Color32, Frame, Grid, Hyperlink, Layout, Stroke, TextEdit, Ui, Vec2,
+};
 use polars::{prelude::*, sql::SQLContext};
 use std::{fs::File, future::Future, sync::Arc};
 
@@ -67,84 +69,104 @@ impl DataFilters {
         let mut csv_delimiter = self.csv_delimiter.clone()?;
         let mut query = self.query.clone()?;
 
-        let width_max = 1200.0;
+        let width_max = ui.available_width();
 
         // Create a grid layout for the filter configuration.
-        Grid::new("data_filters_grid")
+        let mut result = None; // Mover a declaração para fora do Grid
+
+        let grid = Grid::new("data_filters_grid")
             .num_columns(2)
             .spacing([10.0, 20.0])
-            .striped(true)
-            .show(ui, |ui| {
+            .striped(true);
+
+        ui.allocate_ui_with_layout(
+            Vec2::new(width_max, ui.available_height()),
+            Layout::top_down(Align::LEFT),
+            |ui| {
+                grid.show(ui, |ui| {
                 ui.label("Filename:");
-                let filename_edit =
-                    egui::TextEdit::singleline(&mut filename).desired_width(width_max);
+                let filename_edit = TextEdit::singleline(&mut filename).desired_width(width_max);
                 ui.add(filename_edit)
                     .on_hover_text("Enter filename and press the Apply button...");
                 ui.end_row();
 
                 ui.label("Table Name:");
                 let table_name_edit =
-                    egui::TextEdit::singleline(&mut table_name).desired_width(width_max);
+                    TextEdit::singleline(&mut table_name).desired_width(width_max);
                 ui.add(table_name_edit)
                     .on_hover_text("Enter table name for SQL queries...");
                 ui.end_row();
 
                 ui.label("CSV Delimiter:");
                 let csv_delimiter_edit =
-                    egui::TextEdit::singleline(&mut csv_delimiter).desired_width(width_max);
+                    TextEdit::singleline(&mut csv_delimiter).desired_width(width_max);
                 ui.add(csv_delimiter_edit)
                     .on_hover_text("Enter the CSV delimiter character...");
                 ui.end_row();
 
                 ui.label("SQL Query:");
-                let query_edit = egui::TextEdit::multiline(&mut query).desired_width(width_max);
+                let query_edit = TextEdit::multiline(&mut query).desired_width(width_max);
                 ui.add(query_edit)
                     .on_hover_text("Enter SQL query to filter and transform the data...");
                 ui.end_row();
+
+                // Add the button to the grid.
+                ui.label(""); // Empty label to align with the label column.
+                ui.with_layout(Layout::top_down(Align::Center), |ui| {
+                    if ui.button("Apply SQL Commands").clicked() {
+                        // Only create and return DataFilters if the required fields are not empty.
+                        if !filename.trim().is_empty()
+                            && !table_name.trim().is_empty()
+                            && !csv_delimiter.trim().is_empty()
+                            && !query.trim().is_empty()
+                        {
+                            result = Some(DataFilters {
+                                filename: Some(filename.clone()),
+                                table_name: Some(table_name.clone()),
+                                csv_delimiter: Some(csv_delimiter.clone()),
+                                query: Some(query.clone()),
+                                sort: self.sort.clone(), // Preserve existing sort state
+                            });
+                        } else {
+                            // Handle the case where required fields are empty.
+                            eprintln!(
+                                "Error: Filename, Table Name, CSV Delimiter, and Query cannot be empty."
+                            );
+                            result = None;
+                        }
+                    }
+                });
+                ui.end_row();
             });
+        });
 
         // Update the filter values with the edited values.
-        self.filename = Some(filename.clone());
-        self.table_name = Some(table_name.clone());
-        self.csv_delimiter = Some(csv_delimiter.clone());
-        self.query = Some(query.clone());
+        self.filename = Some(filename);
+        self.table_name = Some(table_name);
+        self.csv_delimiter = Some(csv_delimiter);
+        self.query = Some(query);
 
-        // Highlighted frame for displaying SQL command examples.
-        Frame::default()
-            .stroke(Stroke::new(1.0, Color32::GRAY))
-            .outer_margin(2.0)
-            .inner_margin(10.0)
+        // Collapsing header for SQL command examples.
+        CollapsingHeader::new("SQL Command Examples:")
+            .default_open(false) // Initially collapsed.
             .show(ui, |ui| {
-                ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
-                    ui.heading("SQL Command Examples:");
-                });
-
-                ui.add(egui::Label::new(SQL_COMMANDS.join("\n\n")).selectable(true));
+                // Highlighted frame for displaying SQL command examples.
+                Frame::default()
+                    .stroke(Stroke::new(1.0, Color32::GRAY))
+                    .outer_margin(2.0)
+                    .inner_margin(10.0)
+                    .show(ui, |ui| {
+                        ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
+                            let url =
+                                "https://docs.pola.rs/api/python/stable/reference/sql/index.html";
+                            let heading = Hyperlink::from_label_and_url("SQL Interface", url);
+                            ui.add(heading);
+                        });
+                        ui.add(egui::Label::new(SQL_COMMANDS.join("\n\n")).selectable(true));
+                    });
             });
 
-        // Apply button logic
-        if ui.button("Apply SQL Commands").clicked() {
-            // Only create and return DataFilters if the required fields are not empty.
-            if !filename.trim().is_empty()
-                && !table_name.trim().is_empty()
-                && !csv_delimiter.trim().is_empty()
-                && !query.trim().is_empty()
-            {
-                Some(DataFilters {
-                    filename: Some(filename),
-                    table_name: Some(table_name),
-                    csv_delimiter: Some(csv_delimiter),
-                    query: Some(query),
-                    sort: self.sort.clone(), // Preserve existing sort state
-                })
-            } else {
-                // Handle the case where required fields are empty.
-                eprintln!("Error: Filename, Table Name, CSV Delimiter, and Query cannot be empty.");
-                None
-            }
-        } else {
-            None
-        }
+        result // Retorne o resultado
     }
 }
 

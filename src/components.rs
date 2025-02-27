@@ -226,7 +226,7 @@ impl DataFrameContainer {
                     } else {
                         Layout::right_to_left(egui::Align::Center)
                     }
-                } else if column.dtype().is_integer() {
+                } else if column.dtype().is_integer() || column.dtype().is_date() {
                     // Center integer values.
                     Layout::centered_and_justified(egui::Direction::LeftToRight)
                 } else {
