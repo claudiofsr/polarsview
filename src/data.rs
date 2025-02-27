@@ -160,7 +160,7 @@ impl DataFilters {
                             let url =
                                 "https://docs.pola.rs/api/python/stable/reference/sql/index.html";
                             let heading = Hyperlink::from_label_and_url("SQL Interface", url);
-                            ui.add(heading);
+                            ui.add(heading).on_hover_text(url);
                         });
                         ui.add(egui::Label::new(SQL_COMMANDS.join("\n\n")).selectable(true));
                     });
