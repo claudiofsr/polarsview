@@ -1,0 +1,69 @@
+[package]
+name = "polars-view"
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-or-later"
+authors = [
+    "Connor Keane <connor.keane@kxnr.me",
+    "Claudio Fernandes de Souza Rodrigues <claudiofsrodrigues@gmail.com>",
+]
+rust-version = "1.85"
+description = "A fast, cross-platform viewer for Parquet and CSV files, powered by Polars and egui."
+keywords = [
+    "csv",
+    "parquet",
+    "polars",
+    "view",
+]
+
+[dependencies]
+anstyle = "1.0" # Used by clap color
+clap = { version = "4.5", features = ["color", "derive"] }
+egui = "0.31"
+egui_extras = "0.31"
+eframe = { version = "0.31", features = ["persistence"] }
+rfd = { version ="0.15", features = ["file-handle-inner"] }
+tokio = { version = "1.43", features = ["rt", "sync", "rt-multi-thread"] }
+tracing-subscriber = "0.3"
+shellexpand = "3.1"
+parquet = "54.2"
+
+[dependencies.polars]
+version = "0.46.0"
+# git = "https://github.com/pola-rs/polars.git"
+features = [
+    "csv",          # Read CSV format
+    "parquet",      # Read Apache Parquet format
+    "sql",
+    "lazy",         # Lazy API
+    "round_series", # Round underlying float types of Series
+    "serde",
+    "strings",      # Extra string utilities for Utf8Chunked
+    "dtype-datetime",
+]
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[features]
+default = []
+
+[profile.release]
+# https://doc.rust-lang.org/cargo/reference/profiles.html
+debug = false           # No debug info at all.
+strip = "symbols"       # Strip symbols from a binary.
+opt-level = 3           # All optimizations.
+overflow-checks = true  # Panic will occur on overflow.
+lto = true              # Enable link time optimization.
+codegen-units = 1       # Use a single codegen for size optimization.
+panic = "abort"         # Remove traceback information.
+incremental = true      # Save information to disk, improving re-compile times.
+
+[profile.dev]
+opt-level = 1
+
+# Cross-compile a Rust application from Linux to Windows
+# On Manjaro Linux, install with: pacman -S mingw-w64-gcc
+# rustup target list
+# After downloading the target with `rustup target add x86_64-pc-windows-gnu`
+# cargo b -r --target x86_64-unknown-linux-gnu --target x86_64-pc-windows-gnu
